@@ -1,0 +1,8 @@
+  metod
+ 1- ilk framede (yolo başta sürekli tarasın taki ilk dolu bbox listini dönene kadar) [100%]
+ 2- opencv tracker bir aracı kaybettiğinde çalışacak (yolo metodu) [90%]
+ 3- yeni araç girdiğinde (belli aralıkla yolo çalışırsa)
+ 4- bi araç frameden çıktığında KAZA OLDU DİYOR
+
+
+ NOT => Yolo her frame çalışacak yandan sürekli bilgi gönderecek

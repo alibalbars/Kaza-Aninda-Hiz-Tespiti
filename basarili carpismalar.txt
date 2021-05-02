@@ -1,0 +1,25 @@
+highway_crashes.mp4 => 30*23 + 10
+junction_crashes2.mp4 => 5*30 + 33 (kısmen)
+junction_crashes2.mp4 => 12*30 + 10
+junction_crashes2.mp4 => 18*30 + 20 (delta 8-9)
+junction_crashes2.mp4 => 22 * 30 + 20 (sadece sedan araç bariz kaza)
+cctv1.mp4 => 162 * 30 + 10
+cctv1.mp4 => 162 * 30 + 10 (başarısız)
+
+cctv1.mp4 => ((4 * 60) + 36) * 30 + 3
+((5 * 60) + 7) * 30 - 3
+((5 * 60) + 16) * 30 - 3
+((5 * 60) + 16) * 30 + 23
+((5 * 60) + 27) * 30 + 0
+saniye = ((5 * 60) + 38) * 30 + 0
+saniye = ((5 * 60) + 48) * 30 + 20
+saniye = ((6 * 60) + 19) * 30 + 20
+saniye = ((7 * 60) + 7) * 30 + 20
+saniye = ((7 * 60) + 17) * 30 + 20 (araç yönünü bilse bulurdu)
+saniye = ((8 * 60) + 27) * 30 + 0
+saniye = ((0 * 60) + 49) * 30 + 30 (delta 9)
+saniye = ((1 * 60) + 8) * 30 + 25
+saniye = ((1 * 60) + 28) * 30 + 35 (delta 9)
+saniye = ((1 * 60) + 49) * 30 + 20
+
+

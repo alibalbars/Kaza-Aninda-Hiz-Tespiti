@@ -1,3 +1,7 @@
+#süre
+saniye = ((0 * 60) + 0) * 30 + 0
+name = "100"
+
 from absl import flags
 import sys
 FLAGS = flags.FLAGS
@@ -46,7 +50,8 @@ encoder = gdet.create_box_encoder(model_filename, batch_size=1)
 metric = nn_matching.NearestNeighborDistanceMetric('cosine', max_cosine_distance, nn_budget)
 tracker = Tracker(metric)
 
-vid = cv2.VideoCapture('./data/video/100.mp4') # 28, 26, 30 (mTracker güzel test)
+vid = cv2.VideoCapture('./data/video/' + name + '.mp4') # 28, 26, 30 (mTracker güzel test)
+vid.set(1, saniye)
 
 # İlk Frame al
 
@@ -76,7 +81,7 @@ while True:
     # tbox çiz
     #cv2.rectangle(img, (int(tbox[0]),int(tbox[1])), (int(tbox[0]) + int(tbox[2]), int(tbox[1]) + int(tbox[3])), (204, 235, 52), 2)
 
-   
+
     #draw_frame = img.copy()
 
     img_in = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
@@ -97,11 +102,11 @@ while True:
     names = []
     for i in range(len(classes)):
         names.append(class_names[int(classes[i])])
-        
+
     names = np.array(names)
-    
+
     converted_boxes = convert_boxes(img, boxes[0])
-    
+
     features = encoder(img, converted_boxes)
 
     detections = [Detection(bbox, score, class_name, feature) for bbox, score, class_name, feature in
@@ -112,7 +117,7 @@ while True:
     classes = np.array([d.class_name for d in detections])
     indices = preprocessing.non_max_suppression(boxs, classes, nms_max_overlap, scores)
     detections = [detections[i] for i in indices]
-    
+
     #p.print(detections)  // [<deep_sort.detection.Detection object at 0x00000218F72D8D68>, <deep_sort.detection.Detection object at 0x00000218F7325940>, <deep_sort.detection.Detection object at 0x00000218F7325C18>, <deep_sort.detection.Detection object at 0x00000218F7325F28>, <deep_sort.detection.Detection object at 0x00000218F7325EF0>, <deep_sort.detection.Detection object at 0x00000218F7325F60>, <deep_sort.detection.Detection object at 0x00000218F7325D68>, <deep_sort.detection.Detection object at 0x00000218F7325DA0>, <deep_sort.detection.Detection object at 0x00000218F7329400>]
     #p.type_(detections) // TYPE => <class 'list'>
     # p.print(detections[1]) // <deep_sort.detection.Detection object at 0x00000266814E3828>
@@ -120,14 +125,14 @@ while True:
     tracker.predict()
     tracker.update(detections)
 
-    # Matplotlib has a number of built-in colormaps accessible via matplotlib.cm.get_cmap. 
+    # Matplotlib has a number of built-in colormaps accessible via matplotlib.cm.get_cmap.
     cmap = plt.get_cmap('tab20b')
     colors = [cmap(i)[:3] for i in np.linspace(0,1,20)]
 
     # Current vehicle count
     current_count = int(0)
 
-    # tracker'ın tüm sonuçları için for döngüsü
+    # (tek frame içindeki tüm araçlar için döner) tracker'ın tüm sonuçları için for döngüsü
     for track in tracker.tracks:
         if not track.is_confirmed() or track.time_since_update >1:
             continue
@@ -139,7 +144,7 @@ while True:
         # img => videodan alınan frame (np ndarray)
 
         #Bounding box çiz
-        # cv2.rectangle(img, (int(bbox[0]),int(bbox[1])), (int(bbox[2]),int(bbox[3])), color, 2)
+        cv2.rectangle(img, (int(bbox[0]),int(bbox[1])), (int(bbox[2]),int(bbox[3])), color, 2)
         # #cv2.rectangle(img, (int(bbox[0]), int(bbox[1]-30)), (int(bbox[0])+(len(class_name)
         #             #+len(str(track.track_id)))*17, int(bbox[1])), color, -1)
         # cv2.putText(img, class_name+"-"+str(track.track_id), (int(bbox[0]), int(bbox[1]-10)), 0, 0.75,
@@ -150,40 +155,91 @@ while True:
         # center = (int(((tbox[0]) + (tbox[2]/2.0))), int(((tbox[1])+(tbox[3]/2.0))))
         # track_id => sürekli artıyor sınırsız şekilde, yavaş yavaş artıyor
 
-        # Yeni kod
-        if (is_init_frame == True):
+        # Tek frame'deki tüm araç center'larını depola
+        if (is_init_frame == True): # ilk frame ise araçların center'larını cur yerine prev'in içine doldur.
             prev_frame_objects.append([(center[0], center[1]), ot.get_init_index(), 0, deque(), -1, 0])
         else:
+            # her frame de içi tekrar dolduruluyor
             cur_frame_objects.append([(center[0], center[1]), 0, 0, deque(), -1, 0])
-        
+
+
+    # (her frame için bir kere döner)
     if (is_init_frame == False):
         # We only run when we have had at least 1 object detected in the previous (initial) frame
-        if (len(prev_frame_objects) != 0):
-            cur_frame_objects = ot.sort_cur_objects(prev_frame_objects, cur_frame_objects)
-        
 
-    # FPS hesapla 
+        # prev boş olursa hiç bir cur eşlenemeyeceği için böyle bi kontrol var
+        if (len(prev_frame_objects) != 0):
+            # cur'un center dışındaki tüm parametre verilerini doldurur
+            cur_frame_objects = ot.sort_cur_objects(prev_frame_objects, cur_frame_objects)
+
+            # print("Arac sayisi: " + str(len(cur_frame_objects)) + " ===> ", end=' ')
+            # for car in cur_frame_objects:
+            #     print(str(car[4]), ", ", end=' ')
+            #
+            # print()
+
+            # p.print(cur_frame_objects)
+            # for car in cur_frame_objects:
+            #     cv2.putText(img, str(car[1]), car[0], 0, 1, (0,0,255), 2)
+
+
+    # FPS hesapla
     fps = 1./(time.time()-t1)
     cv2.putText(img, "FPS: {:.2f}".format(fps), (0,30), 0, 1, (0,0,255), 2)
     cv2.resizeWindow('output', 1024, 768)
     # cv2.imshow('output', img) #####################################
     # out.write(img)
 
+    #                     0             1  2    3       4  5
+    # point => [(center[0], center[1]), 0, 0, deque(), -1, 0]
+    # 0: center koordinatları
+    # 1: id
+    # 2: obje kaç frame'dir tespit ediliyor
+    # 3: deque
+    # 4: (eşlenme verisi) herhangi bir prev obj ile eşlenip eşlenmediği verisi (yada eşleşmiş olduğu obj'nin indexi olabilir)
+    # 5: Magnitude of object (PREVIOUS FRAME)
+
     is_crash_detected = False # Has a crash been detected anywhere in our current frame?
     for point in cur_frame_objects: # Iterating through all our objects in the current frame.
         # Only objects that have been present for 5 consecutive frames are considered. This is done to
         # filter out any inaccurate momentary detections.
-        if (point[2] >= 5):            
-            # Finding vector of object across 5 frames
+        if (point[2] >= 5): # obje 5 kareden fazladır tespit ediilyorsa
+
+            # Örnek deque => deque([(421, 293), (422, 293), (425, 296), (426, 296), (426, 297)])
+
+            # point[3][-1][0] => objenin dequesisnin son elemanının x değeri
+            # point[3][0][0] => objenin dequesisnin ilk elemanının x değeri
+
+            # point[3][-1][1] => objenin dequesinin son elemanının y değeri
+            # point[3][0][1] => objenin dequesinin ilk elemanının y değeri
+
+            # vector => 5 karedeki x farkı, 5 karedeki y farkı
+            # vector[0] => 5 karedeki x farkı
+            # vector[1] => 5 karedeki y farkı
+
+            # Finding vector of object across 5
             vector = [point[3][-1][0] - point[3][0][0], point[3][-1][1] - point[3][0][1]]
+
             # Getting a simple estimate coordinate of where we expect our object to end up
             # with its current vector. This is used to draw the predicted vector for each object.
+
+            # end_point => x farkı * 2 + cur'un son x değeri, y farkı * 2 + cur'un son y değeri
+            # mevcut konum + son 5 karedeki değişim
             end_point = (2 * vector[0] + point[3][-1][0], 2 * vector[1] + point[3][-1][1])
-            
+
             # Getting magnitude of vector for crash detection. We could use the direction in this detection
             # as well, but we achieved much better results when just using the magnitude.
+
+            # vector[0] = son 5 karedeki x farkı
+            # vector[1] = son 5 karedeki y farkı
+            # vector_mag = son 5 karedeki konum farkı (piksel bazlı)
             vector_mag = (vector[0]**2 + vector[1]**2)**(1/2)
+
             # Change in magnitude (essentially the object's acceleration/deceleration)
+            # vector_mag => (mevcut kare, mecvut kare-5) yer değiştirme
+            # point[5] => (previous kare, previous kare-5) yer değiştirme
+
+            # delta = araç ivmesi
             delta = abs(vector_mag - point[5])
 
             # Flag for current object being a crash or not.
@@ -191,7 +247,7 @@ while True:
             if (delta >= 11) and point[5] != 0.0: # Criteria for crash.
                 is_crash_detected = True
                 has_object_crashed = True
-            
+
             # Drawing circle to label detected objects
             cv2.circle(img, point[0], 5, (0, 255, 255), 2) #draw_frame
             if (has_object_crashed == True):
@@ -199,28 +255,30 @@ while True:
                 cv2.circle(img, point[0], 40, (0, 0, 255), 4) #draw_frame
 
             # Drawing predicted future vector of each object. (Blue line)
-            # Vektör çiz
+
+            # Vektör çizgisini çiz
             cv2.line(img, point[3][-1], end_point, (255, 255, 0), 2) #draw_frame
-    
+
     if (is_crash_detected == True):
         #cv2.putText(img, f"CRASH DETECTED", (0, 30), font, 1, (0, 0, 255), 2, cv2.LINE_AA) #draw_frame
         p.print(" KAZA OLDUUUUUUUUUUUUUUUUUUUUUUUUUUU ")
         crash_flag = True
         cv2.putText(img, f"CRASH DETECTED", (300, 300), font, 1, (0, 0, 255), 2, cv2.LINE_AA) #draw_frame
-    
+
     if crash_flag == True:
         cv2.putText(img, f"CRASH DETECTED", (300, 30), font, 1, (0, 0, 255), 2, cv2.LINE_AA) #draw_frame
 
 
 
-    if (is_init_frame == False):
-        prev_frame_objects = cur_frame_objects.copy()
-        cur_frame_objects = []
+    if (is_init_frame == False): # ilk frame değil ise
+        prev_frame_objects = cur_frame_objects.copy() # prev = cur
+        cur_frame_objects = [] # cur = []
     is_init_frame = False
 
     cv2.imshow('Tracking', img)
 
     if cv2.waitKey(1) == ord('q'):
+        sys.exit()
         break
 vid.release()
 out.release()

@@ -63,14 +63,12 @@ vid.set(1, saniye)
 # mTracker.init(img, tbox)
 
 
-
 # codec = cv2.VideoWriter_fourcc(*'XVID')
 # vid_fps =int(vid.get(cv2.CAP_PROP_FPS))
 # vid_width,vid_height = int(vid.get(cv2.CAP_PROP_FRAME_WIDTH)), int(vid.get(cv2.CAP_PROP_FRAME_HEIGHT))
 # out = cv2.VideoWriter('./data/video/results.avi', codec, vid_fps, (vid_width, vid_height))
 
 # pts = [deque(maxlen=30) for _ in range(1000)]
-
 
 while True:
     _, img = vid.read()
@@ -83,7 +81,7 @@ while True:
     # tbox çiz
     #cv2.rectangle(img, (int(tbox[0]),int(tbox[1])), (int(tbox[0]) + int(tbox[2]), int(tbox[1]) + int(tbox[3])), (204, 235, 52), 2)
 
-   
+
     #draw_frame = img.copy()
 
     img_in = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
@@ -104,11 +102,11 @@ while True:
     names = []
     for i in range(len(classes)):
         names.append(class_names[int(classes[i])])
-        
+
     names = np.array(names)
-    
+
     converted_boxes = convert_boxes(img, boxes[0])
-    
+
     features = encoder(img, converted_boxes)
 
     detections = [Detection(bbox, score, class_name, feature) for bbox, score, class_name, feature in
@@ -126,7 +124,7 @@ while True:
     tracker.predict()
     tracker.update(detections)
 
-    # Matplotlib has a number of built-in colormaps accessible via matplotlib.cm.get_cmap. 
+    # Matplotlib has a number of built-in colormaps accessible via matplotlib.cm.get_cmap.
     cmap = plt.get_cmap('tab20b')
     colors = [cmap(i)[:3] for i in np.linspace(0,1,20)]
 
@@ -140,7 +138,7 @@ while True:
         bbox = track.to_tlbr() # [848.78925062 113.98058018 901.1299524  144.32627563]
         class_name = track.get_class() # car (nesne ismi)
         color = colors[int(track.track_id) % len(colors)] # (0.807843137254902, 0.8588235294117647, 0.611764705882353)
-        
+
         color = [i * 255 for i in color] # [231.0, 203.0, 148.0]
         p.print("GELDİ")
 
@@ -164,15 +162,15 @@ while True:
             prev_frame_objects.append([(center[0], center[1]), ot.find_next_free_index(), 0, deque(), -1, 0, bbox])
         else:
             cur_frame_objects.append([(center[0], center[1]), 0, 0, deque(), -1, 0, bbox])
-        
+
     if (is_init_frame == False):
         # We only run when we have had at least 1 object detected in the previous (initial) frame
         if (len(prev_frame_objects) != 0):
             cur_frame_objects = ot.sort_cur_objects(prev_frame_objects, cur_frame_objects)
             p.print(cur_frame_objects)
-        
 
-    # FPS hesapla 
+
+    # FPS hesapla
     fps = 1./(time.time()-t1)
     cv2.putText(img, "FPS: {:.2f}".format(fps), (0,30), 0, 1, (0,0,255), 2)
     cv2.resizeWindow('output', 1024, 768)
@@ -183,13 +181,13 @@ while True:
     for point in cur_frame_objects: # Iterating through all our objects in the current frame.
         # Only objects that have been present for 5 consecutive frames are considered. This is done to
         # filter out any inaccurate momentary detections.
-        if (point[2] >= 5):            
+        if (point[2] >= 5):
             # Finding vector of object across 5 frames
             vector = [point[3][-1][0] - point[3][0][0], point[3][-1][1] - point[3][0][1]]
             # Getting a simple estimate coordinate of where we expect our object to end up
             # with its current vector. This is used to draw the predicted vector for each object.
             end_point = (2 * vector[0] + point[3][-1][0], 2 * vector[1] + point[3][-1][1])
-            
+
             # Getting magnitude of vector for crash detection. We could use the direction in this detection
             # as well, but we achieved much better results when just using the magnitude.
             vector_mag = (vector[0]**2 + vector[1]**2)**(1/2)
@@ -201,7 +199,7 @@ while True:
             if (delta >= 11) and point[5] != 0.0: # Criteria for crash.
                 is_crash_detected = True
                 has_object_crashed = True
-            
+
             # Drawing circle to label detected objects
             cv2.circle(img, point[0], 5, (0, 255, 255), 2) #draw_frame
             if (has_object_crashed == True):
@@ -212,13 +210,13 @@ while True:
             # Vektör çiz
             cv2.line(img, point[3][-1], end_point, (255, 255, 0), 2) #draw_frame
             cv2.putText(img, str(point[1]), (point[0][0], point[0][1] + 30), font, 1, (255, 50, 50), 2, cv2.LINE_AA)
-    
+
     if (is_crash_detected == True):
         #cv2.putText(img, f"CRASH DETECTED", (0, 30), font, 1, (0, 0, 255), 2, cv2.LINE_AA) #draw_frame
         p.print(" KAZA OLDUUUUUUUUUUUUUUUUUUUUUUUUUUU ")
         crash_flag = True
         cv2.putText(img, f"CRASH DETECTED", (300, 300), font, 1, (252, 102, 3), 2, cv2.LINE_AA) #draw_frame
-    
+
     if crash_flag == True:
         cv2.putText(img, f"CRASH DETECTED", (300, 30), font, 1, (0, 0, 255), 2, cv2.LINE_AA) #draw_frame
 

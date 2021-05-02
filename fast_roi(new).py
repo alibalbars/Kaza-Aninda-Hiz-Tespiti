@@ -1,6 +1,6 @@
 #süre
-saniye = ((0 * 60) + 0) * 30 + 0
-name = "100"
+saniye = ((0 * 60) + 0) * 30 + 10
+name = "2"
 
 mod_var = 0
 mod_flag = 0
@@ -24,31 +24,22 @@ crash_flag = False
 # isim
 vid = cv2.VideoCapture('./data/video/' + name + '.mp4') # 28, 26, 30 (opencv_tracker güzel test)
 
-# get video dimensions
-width = 0
-height = 0
-if vid.isOpened():
-    width  = vid.get(3)  # float `width`
-    height = vid.get(4)  # float `height`
-
-p.print("width: " + str(width) + ", height: " + str(height))
-
 # vid.set(cv2.CAP_PROP_FPS, 1)
 vid.set(1, saniye)
 
 # tracker başlat
-opencv_tracker = cv2.TrackerMOSSE_create()
-# opencv_tracker = cv2.TrackerCSRT_create()
+# opencv_tracker = cv2.TrackerMIL_create()
+# opencv_tracker = cv2.TrackerBoosting_create()
+# opencv_tracker = cv2.TrackerMOSSE_create()
 # opencv_tracker = cv2.TrackerKCF_create()
-
 # bir kere
 _, img = vid.read()
 
 
-# tbox güncellenmesi lazım
-tbox = cv2.selectROI("Tracking", img, False)
-p.print("SELECT ROI TBOX => " + str(tbox)) # top left x, y, w, h (DOĞRU)
+# tbox güncellenmesi lazım (tbox => tuple)
+tbox = cv2.selectROI("YENI FAST ROI", img, False)
 opencv_tracker.init(img, tbox)
+prev_img = img.copy()
 
 is_center_same = False
 
@@ -67,19 +58,24 @@ while True:
 
     # opencv_tracker_box yenile
     # img => yeni büyük frame
+    # opencv_tracker.init(prev_img, tbox)
     success, tbox = opencv_tracker.update(img)
+    # prev_img = img.copy()
+
+    # tbox'ın içindeki image'ı almamız lazım
+
+    # 1 =>
 
     # opencv_tracker_box çiz
-    cv2.rectangle(img, (int(tbox[0]),int(tbox[1])), (int(tbox[0]) + int(tbox[2]), int(tbox[1]) + int(tbox[3])), (204, 235, 52), 2)
+    cv2.rectangle(img, (int(tbox[0]), int(tbox[1])), (int(tbox[0]) + int(tbox[2]), int(tbox[1]) + int(tbox[3])), (204, 235, 52), 2)
     center = (int(((tbox[0]) + (tbox[2]/2.0))), int(((tbox[1])+(tbox[3]/2.0))))
 
     # center'ın x ve y noktalarını yazdır
     p.print(str(center[0]) + " || " +  str(center[1]))
 
     # seçili selectROI kaybolursa
-    if (center[0] == 0 and center[1] == 0) or ((center[0] >= width or center[0] <= 0) or (center[1] >= height or center[1] <= 0)):
+    if center[0] == 0 and center[1] == 0:
         cv2.putText(img, f"KAYBOLDU", (0, 60), font, 1, (255, 50, 50), 2, cv2.LINE_AA)
-        p.print("width: " + str(width) + ", height: " + str(height))
         p.print("SHUT DOWN!")
         sys.exit()
 
@@ -137,7 +133,7 @@ while True:
             vector_mag = (vector[0]**2 + vector[1]**2)**(1/2)
             # Change in magnitude (essentially the object's acceleration/deceleration)
             delta = abs(vector_mag - point[5])
-            # p.print("DELTA = " + str(delta) + " || MAG = " + str(vector_mag))
+            p.print("DELTA = " + str(delta) + " || MAG = " + str(vector_mag))
 
             cv2.putText(img, str("ivme: " + "{:.2f}".format(delta)), (int(tbox[0]), int(tbox[1] - 20)), font, 1, (235, 55, 55), 2, cv2.LINE_AA)
             if delta > 11:
@@ -174,7 +170,7 @@ while True:
         cur_frame_objects = []
     is_init_frame = False
 
-    cv2.imshow('Tracking', img)
+    cv2.imshow('YENI FAST ROI', img)
 
     # yavaş
     # time.sleep(0.8)
@@ -186,14 +182,10 @@ while True:
     # time.sleep(0.3)
 
     # hızlı
-    # time.sleep(0.15)
-
-    # orta hızlı
-    time.sleep(0.10)
+    time.sleep(0.15)
 
     # çok hızlı
     # time.sleep(0.05)
-
 
     if cv2.waitKey(1) == ord('q'):
         break
